@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block main %}
+<style>
+    h3 {
+        font-weight: bold;
+        color: #005f73;
+    }
+    .chart-container {
+        width: 80%;
+        margin: auto;
+    }
+    .table-container {
+        width: 80%;
+        margin: auto;
+        margin-bottom: 20px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    th {
+        background-color: #0077b6;
+        color: white;
+    }
+</style>
+
+<div class="container-fluid text-center">
+    <h3 class="text-dark mb-4">Thống kê điểm danh</h3>
+
+    <!-- Bảng thống kê -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>MSSV</th>
+                    <th>Số lần điểm danh</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTable"></tbody>
+        </table>
+    </div>
+
+    <!-- Biểu đồ cột -->
+    <div class="chart-container">
+        <canvas id="attendanceChart"></canvas>
+    </div>
+
+    <!-- Biểu đồ tròn -->
+    <div class="chart-container">
+        <canvas id="pieChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{% url 'diemdanh_thongke' %}")
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById("attendanceTable");
+                data.labels_mssv.forEach((mssv, index) => {
+                    const row = `<tr><td>${mssv}</td><td>${data.counts_mssv[index]}</td></tr>`;
+                    tableBody.innerHTML += row;
+                });
+
+                const ctxBar = document.getElementById("attendanceChart").getContext("2d");
+                new Chart(ctxBar, {
+                    type: "bar",
+                    data: {
+                        labels: data.labels_mssv,
+                        datasets: [{
+                            label: "Số lần điểm danh",
+                            data: data.counts_mssv,
+                            backgroundColor: "rgba(54, 162, 235, 0.5)",
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                const ctxPie = document.getElementById("pieChart").getContext("2d");
+                new Chart(ctxPie, {
+                    type: "pie",
+                    data: {
+                        labels: data.labels_date,
+                        datasets: [{
+                            label: "Số lần điểm danh theo ngày",
+                            data: data.counts_date,
+                            backgroundColor: [
+                                "#FF6384", "#36A2EB", "#FFCE56", "#4CAF50", "#FF9800",
+                                "#9C27B0", "#E91E63", "#795548", "#607D8B", "#009688"
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            })
+            .catch(error => console.error("Lỗi tải dữ liệu thống kê:", error));
+    });
+</script>
+{% endblock main %}

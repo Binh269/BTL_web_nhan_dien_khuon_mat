@@ -1,0 +1,279 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block main %}
+<style>
+    
+    h3 {
+        font-weight: bold;
+        color: #005f73;
+    }
+    
+    .d-flex {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .camera-feed {
+        border-radius: 10px;
+        border: 2px solid #0077b6;
+        width: 100%;
+        max-width: 640px;
+    }
+    
+    .attendance-list {
+        flex: 1;
+        max-width: 1000px;
+    }
+    
+    .table-wrapper {
+        max-height: 400px; 
+        overflow-y: auto; 
+        border: 1px solid #ccc;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    th, td {
+        border: 1px solid #0077b6;
+        padding: 8px;
+        text-align: center;
+    }
+    
+    th {
+        background-color: #0077b6;
+        color: white;
+    }
+    
+    button {
+        border-radius: 5px;
+        font-size: 16px;
+    }    
+</style>
+
+<div class="container-fluid text-center">
+    <h3 class="text-dark mb-4">Ứng dụng nhận diện khuôn mặt</h3>
+    <div class="d-flex justify-content-between">
+        <div class="card shadow p-4" style="flex: 1;">
+            <div class="card-body">
+                <img src="{% url 'video_feed' %}" width="640" height="480" class="camera-feed">
+                <div class="mt-3">
+                    <button id="diemDanhButton" class="btn btn-primary" onclick="toggleDiemDanh()">Điểm danh</button>
+                </div>
+                <div id="message" class="mt-3 font-weight-bold"></div>
+            </div>
+        </div>
+
+        <div class="card shadow p-4 attendance-list">
+            <h4>Danh sách điểm danh</h4>
+            <div class="table-wrapper">
+                <table id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>MSSV</th>
+                            <th>Tên</th>
+                            <th>Lớp</th>
+                            <th>Khoa</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div class="card shadow mt-4 p-4">
+            <h4 class="text-center">Thêm sinh viên mới</h4>
+            <form id="addStudentForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="mssv">Mã SV:</label>
+                    <input type="text" id="mssv" name="mssv" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="name">Tên:</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="lop">Lớp:</label>
+                    <select id="lop" name="lop" class="form-control" required>
+                        <option value="K56KMT">K56KMT</option>
+                        <option value="K57KMT">K57KMT</option>
+                        <option value="K58KMT">K58KMT</option>
+                        <option value="K59KMT">K59KMT</option>
+                        {% for lop in danh_sach_lop %}
+                            <option value="{{ lop }}">{{ lop }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="khoa">Khoa:</label>
+                    <select id="khoa" name="khoa" class="form-control" required>
+                        <option value="dientu">Điện tử</option>
+                        <option value="kinhte">Kinh tế</option>
+                        <option value="dien">Điện</option>
+                        {% for khoa in danh_sach_khoa %}
+                            <option value="{{ khoa }}">{{ khoa }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="images">Chọn ảnh:</label>
+                    <input type="file" id="images" name="images" class="form-control" multiple accept="image/*" required>
+                </div>
+                <button type="button" class="btn btn-info mt-2" onclick="addStudent()">Thêm người</button>
+            </form>
+        </div>
+        <div class="card shadow mt-4 p-4">
+            <h4 class="text-center">Thêm sinh viên bằng thư mục</h4>
+            <form id="addFolderForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="folderInput">Chọn thư mục:</label>
+                    <input type="file" id="folderInput" webkitdirectory directory class="form-control" required>
+                </div>
+                <button type="button" class="btn btn-success mt-2" onclick="addFolder()">Thêm thư mục</button>
+            </form>
+            <div id="folderMessage" class="mt-3 font-weight-bold"></div>
+        </div>        
+    </div>
+
+    <script>
+        let diemDanhDangChay = false;
+        let intervalId = null;
+
+        function getCSRFToken() {
+            let cookieValue = null;
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    cookieValue = cookie.substring('csrftoken='.length, cookie.length);
+                    break;
+                }
+            }
+            return cookieValue;
+        }
+
+        function toggleDiemDanh() {
+            let button = document.getElementById("diemDanhButton");
+            let messageDiv = document.getElementById("message");
+       
+            if (!diemDanhDangChay) {
+                button.innerText = "Dừng";
+                button.classList.remove("btn-primary");
+                button.classList.add("btn-danger");
+                diemDanhDangChay = true;
+                
+                intervalId = setInterval(() => {
+                    fetch("{% url 'mark_attendance' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCSRFToken()
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(data))  // Log the response to the console
+                    .catch(error => console.error('Lỗi:', error));
+                    
+                }, 5000); // Đặt khoảng thời gian giữa các lần điểm danh, ví dụ 5000ms (5 giây)
+                
+            } else {
+                button.innerText = "Điểm danh";
+                button.classList.remove("btn-danger");
+                button.classList.add("btn-primary");
+                diemDanhDangChay = false;
+                clearInterval(intervalId);
+            }
+        }
+       
+        function addStudent() {
+            let formData = new FormData(document.getElementById('addStudentForm'));
+            
+            fetch("{% url 'them_sv' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                let messageDiv = document.getElementById('message');
+                messageDiv.innerText = data.message || data.error;
+                messageDiv.style.color = data.message ? 'green' : 'red';
+        
+                if (data.message) {
+                    document.getElementById("addStudentForm").reset();
+                }
+            })
+            .catch(error => console.error('Lỗi:', error));
+        }
+        
+        function loadDiemDanhList() {
+            fetch("{% url 'diemdanh_list' %}")
+                .then(response => response.json())
+                .then(data => {
+                    let tableBody = document.getElementById('attendanceTableBody');
+                    tableBody.innerHTML = '';  
+
+                    data.forEach(record => {
+                        let row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.mssv}</td>
+                            <td>${record.name}</td>
+                            <td>${record.lop}</td>
+                            <td>${record.Khoa}</td>
+                            <td>${record.time}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Lỗi:', error));
+        }
+        function addFolder() {
+            let folderInput = document.getElementById("folderInput");
+            let files = folderInput.files;
+            
+            if (files.length === 0) {
+                alert("Vui lòng chọn một thư mục!");
+                return;
+            }
+        
+            // Lấy tên thư mục đầu tiên (để trích xuất MSSV, tên, lớp, khoa)
+            let folderName = files[0].webkitRelativePath.split("/")[0];
+        
+            let formData = new FormData();
+            formData.append("folder_name", folderName);
+        
+            fetch("{% url 'add_folder' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                let messageDiv = document.getElementById("folderMessage");
+                messageDiv.innerText = data.message || data.error;
+                messageDiv.style.color = data.message ? "green" : "red";
+        
+                if (data.message) {
+                    document.getElementById("addFolderForm").reset();
+                }
+            })
+            .catch(error => console.error("Lỗi:", error));
+        }
+        
+        
+        
+        setInterval(loadDiemDanhList, 1000);
+    </script>
+{% endblock main %} 

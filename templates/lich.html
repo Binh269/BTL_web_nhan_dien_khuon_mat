@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block main %}
+<style>
+
+    
+    h3 {
+        text-align: center;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .button_tkb {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        margin: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .button_tkb:hover {
+        background-color: #0056b3;
+    }
+    
+    input[type="file"] {
+        display: block;
+        margin: 10px 0;
+    }
+    
+    #saveToDB {
+        background-color: #28a745;
+        cursor: not-allowed;
+    }
+    
+    .data_tkb {
+        margin-top: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        margin-top: 15px;
+    }
+    
+    .table-tkb {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+    
+    .table-tkb th, .table-tkb td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .table-tkb th {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .table-tkb tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    
+    .tkb-row:hover {
+        background-color: #e9ecef;
+        transition: background 0.3s;
+    }
+    
+</style>
+    <div class="container-fluid">
+        <h3 class="text-dark mb-4">Lịch phòng</h3>
+        <div class="card shadow"></div>
+    </div>
+    <button id="exportExcel" class="button_tkb">Xuất Excel</button>
+    <input type="file" id="importExcel" accept=".xlsx, .xls">
+    <button id="saveToDB" disabled="">Lưu Dữ Liệu Vào CSDL</button>
+    <div class="data_tkb">
+        <button class="button_tkb" onclick="them_tkb()">Thêm</button>
+        <div class="table-container">
+            <table class="table-tkb">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ngày</th>
+                        <th>Thời Gian</th>
+                        <th>Mã Phòng</th>
+                        <th>Mã Lớp</th>
+                        <th>Mã GV</th>
+                        <th>Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="tkb-row" data-id="001">
+                        <td>001</td>
+                        <td>2024-10-23</td>
+                        <td>09:00:00</td>
+                        <td>PH001</td>
+                        <td>L001</td>
+                        <td>GV001</td>
+                        <td>
+                            <button class="button_tkb" onclick="sua_tkb('001', this)">Sửa</button>
+                            <button class="button_tkb" onclick="xoa_tkb('001', this)">Xóa</button>
+                        </td>
+                    </tr>
+                    <tr class="tkb-row" data-id="002">
+                        <td>002</td>
+                        <td>2024-10-23</td>
+                        <td>10:00:00</td>
+                        <td>PH002</td>
+                        <td>L002</td>
+                        <td>GV002</td>
+                        <td>
+                            <button class="button_tkb" onclick="sua_tkb('002', this)">Sửa</button>
+                            <button class="button_tkb" onclick="xoa_tkb('002', this)">Xóa</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock main %}
