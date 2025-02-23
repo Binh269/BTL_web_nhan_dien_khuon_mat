@@ -191,8 +191,10 @@
                 diemDanhDangChay = false;
                 clearInterval(intervalId);
             }
+            loadDiemDanhList();
         }
-       
+        loadDiemDanhList();
+
         function addStudent() {
             let formData = new FormData(document.getElementById('addStudentForm'));
             
@@ -214,6 +216,7 @@
                 }
             })
             .catch(error => console.error('Lỗi:', error));
+            loadDiemDanhList();
         }
         
         function loadDiemDanhList() {
@@ -270,10 +273,11 @@
                 }
             })
             .catch(error => console.error("Lỗi:", error));
+            loadDiemDanhList();
         }
         
         
         
-        setInterval(loadDiemDanhList, 1000);
+        {% comment %} setInterval(loadDiemDanhList, 1000); {% endcomment %}
     </script>
 {% endblock main %} 

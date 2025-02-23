@@ -3,6 +3,7 @@ import datetime
 from mailbox import mbox
 import os
 import sqlite3
+import time
 from tkinter import Image
 from django.conf import settings
 from django.http import JsonResponse, StreamingHttpResponse
@@ -28,7 +29,8 @@ import pyodbc
 from datetime import datetime
 from unidecode import unidecode
 from collections import Counter
-
+import Show.giaima as giaima
+import Show.dk_dongco as dk_dongco
 
 def index(request):
 	PhongHoc = Model_Phong.objects.all()
@@ -117,7 +119,7 @@ def Diemdanh(request):
 def connect_to_db():
     return sqlite3.connect("db.sqlite3")
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 model = InceptionResnetV1(pretrained='vggface2').eval().to(device)
 mtcnn = MTCNN(device=device)
 model.load_state_dict(torch.load('Show/models/face_recognition_model1.pth', map_location=device))
@@ -127,7 +129,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
-DATASET_DIR = r'E:\BTL_Nhan_Dien_Khuon_Mat\BT_IoT_CV\dataset'
+DATASET_DIR = r'dataset'
 dataset_embeddings = []
 dataset_labels = []
 for label in os.listdir(DATASET_DIR):
@@ -154,38 +156,87 @@ from threading import Lock
 detected_label = []
 label_lock = Lock()
 
-def detect_face():
-    global detected_label
-    cap = cv2.VideoCapture(0)
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            continue
+# def detect_face():
+#     global detected_label
+#     cap = cv2.VideoCapture(0)
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             continue
         
+#         boxes, _ = mtcnn.detect(frame)
+#         if boxes is not None:
+#             with label_lock:
+#                 detected_label = None
+#             for box in boxes:
+#                 face = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+#                 face_tensor = transform(face).unsqueeze(0).to(device)
+#                 face_embedding = model(face_tensor).detach().cpu().numpy().flatten()
+#                 distances = [cosine(face_embedding, stored_embedding) for stored_embedding in dataset_embeddings]
+#                 min_distance_idx = np.argmin(distances)
+#                 min_distance = distances[min_distance_idx]
+#                 label = dataset_labels[min_distance_idx] if min_distance < 0.5 else "Unknown"
+#                 with label_lock:  
+#                     detected_label = label if label != "Unknown" else None
+#                 cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
+#                 cv2.putText(frame, f"{label}", (int(box[0]), int(box[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+#                 print(detected_label)
+#         _, buffer = cv2.imencode('.jpg', frame)
+#         yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+#     cap.release()
+
+# def video_feed(request):
+#     return StreamingHttpResponse(detect_face(), content_type='multipart/x-mixed-replace; boundary=frame')
+def detect_face():
+    while True:
+        with giaima.frame_lock:
+            if giaima.latest_frame is None:
+                print("⚠ Không có frame từ MQTT")
+                continue
+            frame = giaima.latest_frame.copy()
+        
+
+        # Nhận diện khuôn mặt
         boxes, _ = mtcnn.detect(frame)
+
         if boxes is not None:
             with label_lock:
-                detected_label = None
+                detected_label = None  
+
             for box in boxes:
-                face = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+                x1, y1, x2, y2 = map(int, box)
+                face = frame[y1:y2, x1:x2]
+
+                if face.shape[0] == 0 or face.shape[1] == 0:
+                    print("⚠ Khuôn mặt bị cắt lỗi, bỏ qua!")
+                    continue
+
                 face_tensor = transform(face).unsqueeze(0).to(device)
                 face_embedding = model(face_tensor).detach().cpu().numpy().flatten()
+
                 distances = [cosine(face_embedding, stored_embedding) for stored_embedding in dataset_embeddings]
                 min_distance_idx = np.argmin(distances)
                 min_distance = distances[min_distance_idx]
+
                 label = dataset_labels[min_distance_idx] if min_distance < 0.5 else "Unknown"
-                with label_lock:  
+                with label_lock:
                     detected_label = label if label != "Unknown" else None
-                cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
-                cv2.putText(frame, f"{label}", (int(box[0]), int(box[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                print(detected_label)
+
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
         _, buffer = cv2.imencode('.jpg', frame)
-        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        if buffer is None:
+            continue
 
-    cap.release()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+
 def video_feed(request):
+    """ Trả về stream video cho Django """
     return StreamingHttpResponse(detect_face(), content_type='multipart/x-mixed-replace; boundary=frame')
-
 @csrf_exempt  
 def diemdanh(request):
     global detected_label
@@ -205,14 +256,21 @@ def diemdanh(request):
                 
                 if student:
                     name = student[0]  # Vì fetchone() trả về tuple (name,)
-                    print(f"Đã tìm thấy sinh viên: {name}, MSSV: {mssv}")
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Định dạng thời gian
+                    print(current_time)
 
                     cursor.execute("""
                         INSERT INTO diemdanh (mssv, time, status)
                         VALUES (?, ?, ?)
                     """, (mssv, current_time, 'success'))
                     conn.commit()
+                    mqtt_payload = {
+                        "date": current_time.split(" ")[0],  # Lấy ngày
+                        "time": current_time.split(" ")[1],  # Lấy giờ
+                        "Tốc độ động cơ": "20%",
+                        "status": "1"
+                    }
+                    dk_dongco.send_mqtt_message(mqtt_payload)
 
                     return JsonResponse({
                         'mssv': mssv,
@@ -222,7 +280,6 @@ def diemdanh(request):
                         'message': 'Đã điểm danh'
                     })
                 else:
-                    print("Không tìm thấy sinh viên")
                     return JsonResponse({'status': 'fail', 'message': 'Không tìm thấy sinh viên'})
 
             except Exception as e:
@@ -242,8 +299,7 @@ def diemdanh_list(request):
 
     try:
         cursor.execute("""
-            SELECT diemdanh.mssv, thongtin.name, thongtin.lop, thongtin.Khoa, 
-                   strftime('%d/%m/%Y %H:%M:%S', diemdanh.time) AS formatted_time
+            SELECT diemdanh.mssv, thongtin.name, thongtin.lop, thongtin.Khoa, diemdanh.time
             FROM diemdanh
             JOIN thongtin ON diemdanh.mssv = thongtin.mssv
             ORDER BY diemdanh.id
@@ -256,7 +312,7 @@ def diemdanh_list(request):
                 'name': row[1],
                 'lop': row[2],
                 'Khoa': row[3],
-                'time': row[4]  # Đã được format đúng định dạng ngày giờ
+                'time': row[4] 
             }
             for row in attendances
         ]
@@ -306,7 +362,7 @@ def them_sv(request):
 @csrf_exempt
 def add_folder(request):
     if request.method == "POST":
-        dataset_path = "E:/IOT/project_Binh/project_Binh/dataset"
+        dataset_path = "dataset"
 
         if not os.path.exists(dataset_path):
             return JsonResponse({"error": "Thư mục dataset không tồn tại"}, status=400)

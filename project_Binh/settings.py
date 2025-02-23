@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-(+o2=qwm91-1f^c5r_)&5rd5yu@b$%zqtc_b16ulw23&rz16&3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.0.253']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'Show',
+    'Show.giaima',
 ]
 
 MIDDLEWARE = [
