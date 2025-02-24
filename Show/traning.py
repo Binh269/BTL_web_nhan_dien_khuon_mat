@@ -14,9 +14,9 @@ model = InceptionResnetV1(pretrained='vggface2').eval().to(device)
 mtcnn = MTCNN(image_size=160, margin=20, device=device)
 
 # Định nghĩa đường dẫn dataset và model
-DATASET_DIR = r'E:/IOT/project_Binh/project_Binh/dataset'
-MODEL_PATH = 'E:/IOT/project_Binh/project_Binh/Show/models/face_recognition_model1.pth'
-EMBEDDINGS_PATH = 'E:/IOT/project_Binh/project_Binh/Show/models/embeddings_data.pth'
+DATASET_DIR = r'../dataset'
+MODEL_PATH = 'Show/models/face_recognition_model1.pth'
+EMBEDDINGS_PATH = 'Show/models/embeddings_data.pth'
 
 # Kiểm tra xem embeddings đã có dữ liệu cũ không
 if os.path.exists(EMBEDDINGS_PATH):

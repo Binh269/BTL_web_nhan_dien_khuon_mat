@@ -6,7 +6,7 @@ import threading
 import time
 from django.http import StreamingHttpResponse
 
-BROKER = "192.168.0.101"
+BROKER = "192.168.195.22"
 PORT = 1883
 TOPIC = "Camera_vip/#"
 

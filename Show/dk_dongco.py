@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 import json
 
 # Cấu hình MQTT
-MQTT_BROKER = "192.168.0.101"  # Thay bằng broker của bạn
+MQTT_BROKER = "192.168.0.102"  # Thay bằng broker của bạn
 MQTT_PORT = 1883
 MQTT_TOPIC = "MQTT_DC_DongCo"
 

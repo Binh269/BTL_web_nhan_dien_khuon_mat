@@ -150,7 +150,6 @@ for label in os.listdir(DATASET_DIR):
                         dataset_labels.append(student_name)
 dataset_embeddings = np.array(dataset_embeddings)
 dataset_labels = np.array(dataset_labels)
-detected_label = None
 
 from threading import Lock
 detected_label = []
@@ -175,7 +174,7 @@ label_lock = Lock()
 #                 distances = [cosine(face_embedding, stored_embedding) for stored_embedding in dataset_embeddings]
 #                 min_distance_idx = np.argmin(distances)
 #                 min_distance = distances[min_distance_idx]
-#                 label = dataset_labels[min_distance_idx] if min_distance < 0.5 else "Unknown"
+#                 label = dataset_labels[min_distance_idx] if min_distance < 0.3 else "Unknown"
 #                 with label_lock:  
 #                     detected_label = label if label != "Unknown" else None
 #                 cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
@@ -186,9 +185,8 @@ label_lock = Lock()
 
 #     cap.release()
 
-# def video_feed(request):
-#     return StreamingHttpResponse(detect_face(), content_type='multipart/x-mixed-replace; boundary=frame')
 def detect_face():
+    global detected_label
     while True:
         with giaima.frame_lock:
             if giaima.latest_frame is None:
@@ -200,38 +198,25 @@ def detect_face():
         # Nhận diện khuôn mặt
         boxes, _ = mtcnn.detect(frame)
 
+        boxes, _ = mtcnn.detect(frame)
         if boxes is not None:
             with label_lock:
-                detected_label = None  
-
+                detected_label = None
             for box in boxes:
-                x1, y1, x2, y2 = map(int, box)
-                face = frame[y1:y2, x1:x2]
-
-                if face.shape[0] == 0 or face.shape[1] == 0:
-                    print("⚠ Khuôn mặt bị cắt lỗi, bỏ qua!")
-                    continue
-
+                face = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
                 face_tensor = transform(face).unsqueeze(0).to(device)
                 face_embedding = model(face_tensor).detach().cpu().numpy().flatten()
-
                 distances = [cosine(face_embedding, stored_embedding) for stored_embedding in dataset_embeddings]
                 min_distance_idx = np.argmin(distances)
                 min_distance = distances[min_distance_idx]
-
-                label = dataset_labels[min_distance_idx] if min_distance < 0.5 else "Unknown"
-                with label_lock:
+                label = dataset_labels[min_distance_idx] if min_distance < 0.3 else "Unknown"
+                with label_lock:  
                     detected_label = label if label != "Unknown" else None
-
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
+                cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
+                cv2.putText(frame, f"{label}", (int(box[0]), int(box[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                print(detected_label)
         _, buffer = cv2.imencode('.jpg', frame)
-        if buffer is None:
-            continue
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 
 def video_feed(request):
@@ -242,18 +227,17 @@ def diemdanh(request):
     global detected_label
     print("Nhận được yêu cầu điểm danh")
     print("Giá trị detected_label trước khi kiểm tra:", detected_label)
-
     with label_lock:
         if detected_label:
             print("Sinh viên nhận diện: " + detected_label)
             mssv = detected_label.strip().split('_')[0]
-
+            time.sleep(5)
             conn = connect_to_db()
             cursor = conn.cursor()
             try:
                 cursor.execute("SELECT name FROM thongtin WHERE mssv = ?", (mssv,))
                 student = cursor.fetchone()
-                
+                print(student)
                 if student:
                     name = student[0]  # Vì fetchone() trả về tuple (name,)
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Định dạng thời gian
@@ -267,8 +251,7 @@ def diemdanh(request):
                     mqtt_payload = {
                         "date": current_time.split(" ")[0],  # Lấy ngày
                         "time": current_time.split(" ")[1],  # Lấy giờ
-                        "Tốc độ động cơ": "20%",
-                        "status": "1"
+                        "speed": "1"
                     }
                     dk_dongco.send_mqtt_message(mqtt_payload)
 
@@ -336,6 +319,8 @@ def them_sv(request):
 
         if not mssv or not ten or not lop or not khoa:
             return JsonResponse({'error': 'Vui lòng điền đầy đủ thông tin'}, status=400)
+        
+        print(f"Dữ liệu nhận được: {mssv} - {ten} - {lop} - {khoa}")  
 
         try:
             conn = connect_to_db()
@@ -347,6 +332,13 @@ def them_sv(request):
 
             cursor.execute("INSERT INTO thongtin (mssv, name, lop, Khoa) VALUES (?, ?, ?, ?)", (mssv, ten, lop, khoa))
             conn.commit()
+
+            print("Đã đến bước tạo thư mục...")
+            folder_name = f"{mssv}_{unidecode(ten).replace(' ', '')}_{unidecode(lop).replace(' ', '')}_{unidecode(khoa).replace(' ', '')}"
+            print(f"Tên thư mục: {folder_name}")  
+
+            dataset_path = os.path.join("dataset", folder_name)
+            os.makedirs(dataset_path, exist_ok=True)
 
             return JsonResponse({'message': 'Thêm sinh viên thành công'})
 
