@@ -1,0 +1,115 @@
+<div class="container">
+    <style>
+/* Tạo background gradient rực rỡ */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Container của form */
+.container {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    width: 350px;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.container:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Tiêu đề */
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Form input */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+input {
+    padding: 12px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+    font-size: 16px;
+}
+
+/* Nút bấm */
+button {
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+button[type="submit"] {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+button[type="submit"]:hover {
+    background: linear-gradient(135deg, #0056b3, #003f7f);
+}
+
+button[type="button"] {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+}
+
+button[type="button"]:hover {
+    background: linear-gradient(135deg, #1e7e34, #155d27);
+}
+
+/* Thông báo lỗi */
+.message {
+    color: red;
+    margin-top: 10px;
+}
+
+/* Liên kết */
+p {
+    margin-top: 15px;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+        
+    </style>
+    <h2>Đăng nhập</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Tên đăng nhập" required>
+        <input type="password" name="password" placeholder="Mật khẩu" required>
+        <button type="submit">Đăng nhập</button>
+    </form>
+    <p>Nếu chưa có tài khoản, bạn có thể <a href="{% url 'register' %}">Đăng ký ngay</a>.</p>
+    {% for message in messages %}
+        <p class="message">{{ message }}</p>
+    {% endfor %}
+</div>

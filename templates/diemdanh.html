@@ -3,6 +3,7 @@
 {% load static %}
 
 {% block main %}
+{% comment %} 
 <style>
     
     h3 {
@@ -53,10 +54,96 @@
         border-radius: 5px;
         font-size: 16px;
     }    
-</style>
+</style> {% endcomment %}
+<style>
+    /* Giữ nguyên style gốc */
+    h3 {
+        font-weight: bold;
+        color: #005f73;
+    }
 
+    .d-flex {
+        display: flex;
+        gap: 20px;
+    }
+
+    .camera-feed {
+        border-radius: 10px;
+        border: 2px solid #0077b6;
+        width: 100%;
+        max-width: 640px;
+    }
+
+    .attendance-list {
+        flex: 1;
+        max-width: 1000px;
+    }
+
+    .table-wrapper {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+    }
+
+    th {
+        background-color: #0077b6;
+        color: white;
+    }
+
+    th, td {
+        border: 1px solid #0077b6;
+        padding: 8px;
+        text-align: center;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .d-flex {
+            flex-direction: column; /* Xếp dọc */
+            align-items: center;
+            gap: 15px;
+        }
+
+        .camera-feed {
+            max-width: 100%; /* Chiếm toàn chiều rộng */
+        }
+
+        .attendance-list {
+            max-width: 100%;
+        }
+
+        .table-wrapper {
+            max-height: 300px; /* Giảm chiều cao cho mobile */
+        }
+
+        th, td {
+            padding: 6px; /* Giảm padding */
+            font-size: 0.9rem; /* Giảm kích thước chữ */
+        }
+
+        button {
+            padding: 8px 15px; /* Nút nhỏ hơn */
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        h3 {
+            font-size: 1.5rem; /* Giảm kích thước chữ */
+        }
+
+        th, td {
+            padding: 4px;
+            font-size: 0.8rem;
+        }
+
+        button {
+            padding: 6px 10px;
+        }
+    }
+</style>
 <div class="container-fluid text-center">
-    <h3 class="text-dark mb-4">Ứng dụng nhận diện khuôn mặt</h3>
+    <h3 class="text-dark mb-4">Ứng dụng điểm danh nhận diện khuôn mặt</h3>
     <div class="d-flex justify-content-between">
         <div class="card shadow p-4" style="flex: 1;">
             <div class="card-body">
@@ -69,7 +156,7 @@
         </div>
 
         <div class="card shadow p-4 attendance-list">
-            <h4>Danh sách điểm danh</h4>
+            <h4>Danh sách sinh viên điểm danh</h4>
             <div class="table-wrapper">
                 <table id="attendanceTable">
                     <thead>
@@ -86,6 +173,26 @@
             </div>
         </div>
     </div>
+    <div class="card shadow mt-4 p-4">
+        <h4 class="text-center">Điểm danh thủ công</h4>
+        <form id="manualOpenForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="manual_mssv">Mã SV:</label>
+                <input type="text" id="manual_mssv" name="manual_mssv" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="username">Tài khoản:</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mật khẩu:</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <button type="button" class="btn btn-success mt-2" onclick="manualOpen()">🔓 Xác nhận mở cửa</button>
+        </form>
+        <div id="manualMessage" class="mt-3 font-weight-bold"></div>
+    </div> 
 </div>
 
         <div class="card shadow mt-4 p-4">
@@ -127,6 +234,15 @@
                     <label for="images">Chọn ảnh:</label>
                     <input type="file" id="images" name="images" class="form-control" multiple accept="image/*" required>
                 </div>
+                <div class="text-center mt-2">
+                    <button type="button" class="btn btn-primary" onclick="captureImage()">📷 Chụp ảnh</button>
+                </div>
+
+                <!-- Hiển thị video để chụp ảnh -->
+                <video id="cameraPreview" autoplay style="width: 100%; display: none;"></video>
+
+                <!-- Hiển thị ảnh đã chụp -->
+                <div id="capturedImages" class="mt-2"></div>
                 <button type="button" class="btn btn-info mt-2" onclick="addStudent()">Thêm người</button>
             </form>
         </div>
@@ -164,13 +280,13 @@
         function toggleDiemDanh() {
             let button = document.getElementById("diemDanhButton");
             let messageDiv = document.getElementById("message");
-       
+        
             if (!diemDanhDangChay) {
                 button.innerText = "Dừng";
                 button.classList.remove("btn-primary");
                 button.classList.add("btn-danger");
                 diemDanhDangChay = true;
-                
+        
                 intervalId = setInterval(() => {
                     fetch("{% url 'mark_attendance' %}", {
                         method: 'POST',
@@ -179,45 +295,103 @@
                         }
                     })
                     .then(response => response.json())
-                    .then(data => console.log(data))  // Log the response to the console
-                    .catch(error => console.error('Lỗi:', error));
-                    
-                }, 5000); // Đặt khoảng thời gian giữa các lần điểm danh, ví dụ 5000ms (5 giây)
-                
+                    .then(data => {
+                        if (data.success === true) {  // Explicitly check success key
+                            messageDiv.innerText = "✅ Đã điểm danh thành công!";
+                            messageDiv.style.color = "green";
+                            loadDiemDanhList();  // Refresh the attendance list
+                        } else {
+                            messageDiv.innerText = data.message || "⚠️ Không nhận diện được khuôn mặt!";
+                            messageDiv.style.color = "red";
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Lỗi:', error);
+                        messageDiv.innerText = "❌ Lỗi hệ thống!";
+                        messageDiv.style.color = "red";
+                    });
+                }, 5000);
+        
             } else {
                 button.innerText = "Điểm danh";
                 button.classList.remove("btn-danger");
                 button.classList.add("btn-primary");
                 diemDanhDangChay = false;
                 clearInterval(intervalId);
+                messageDiv.innerText = "";  // Clear message when stopping
             }
-            loadDiemDanhList();
         }
+        
         loadDiemDanhList();
 
-        function addStudent() {
-            let formData = new FormData(document.getElementById('addStudentForm'));
-            
-            fetch("{% url 'them_sv' %}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                let messageDiv = document.getElementById('message');
-                messageDiv.innerText = data.message || data.error;
-                messageDiv.style.color = data.message ? 'green' : 'red';
+        let videoStream = null;
+        let capturedImages = [];
+        let imageCount = 0;
+
+        function captureImage() {
+            if (imageCount >= 5) {
+                alert("Đã chụp đủ 5 ảnh!");
+                return;
+            }
         
-                if (data.message) {
-                    document.getElementById("addStudentForm").reset();
+            let video = document.querySelector(".camera-feed"); // Chọn video feed nhận diện khuôn mặt
+            let canvas = document.createElement("canvas");
+            canvas.width = video.width;
+            canvas.height = video.height;
+            let ctx = canvas.getContext("2d");
+        
+            // Chụp ảnh từ video nhận diện khuôn mặt
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+            // Chuyển ảnh thành file Blob
+            canvas.toBlob(blob => {
+                let file = new File([blob], `captured_${imageCount + 1}.jpg`, { type: "image/jpeg" });
+                capturedImages.push(file);
+                imageCount++;
+        
+                // Hiển thị ảnh đã chụp
+                let imgElement = document.createElement("img");
+                imgElement.src = URL.createObjectURL(blob);
+                imgElement.style.width = "100px";
+                imgElement.classList.add("m-2");
+                document.getElementById("capturedImages").appendChild(imgElement);
+        
+                if (imageCount >= 5) {
+                    alert("Đã chụp đủ 5 ảnh!");
                 }
-            })
-            .catch(error => console.error('Lỗi:', error));
-            loadDiemDanhList();
+            }, "image/jpeg");
         }
+        
+// Gửi dữ liệu sinh viên lên server
+function addStudent() {
+    let formData = new FormData(document.getElementById('addStudentForm'));
+
+    // Nếu có ảnh chụp, thêm vào FormData
+    if (capturedImages.length === 5) {
+        capturedImages.forEach((file, index) => {
+            formData.append(`images`, file);
+        });
+    }
+
+    fetch("{% url 'them_sv' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCSRFToken() },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        let messageDiv = document.getElementById('message');
+        messageDiv.innerText = data.message || data.error;
+        messageDiv.style.color = data.message ? 'green' : 'red';
+
+        if (data.message) {
+            document.getElementById("addStudentForm").reset();
+            document.getElementById("capturedImages").innerHTML = "";
+        }
+    })
+    .catch(error => console.error('Lỗi:', error));
+    loadDiemDanhList();
+}
         
         function loadDiemDanhList() {
             fetch("{% url 'diemdanh_list' %}")
@@ -278,6 +452,26 @@
         
         
         
-        {% comment %} setInterval(loadDiemDanhList, 1000); {% endcomment %}
-    </script>
+        function manualOpen() {
+            let formData = new FormData(document.getElementById('manualOpenForm'));
+    
+            fetch("{% url 'manual_open' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                let messageDiv = document.getElementById('manualMessage');
+                messageDiv.innerText = data.message || data.error;
+                messageDiv.style.color = data.message ? 'green' : 'red';
+    
+                if (data.success) {
+                    loadDiemDanhList();
+                    document.getElementById("manualOpenForm").reset();
+                }
+            })
+            .catch(error => console.error('Lỗi:', error));
+        }
+        </script>
 {% endblock main %} 

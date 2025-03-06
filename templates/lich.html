@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block main %}
-<style>
+{% comment %} <style>
 
     
     h3 {
@@ -75,6 +75,209 @@
         transition: background 0.3s;
     }
     
+</style> {% endcomment %}
+<style>
+    /* Giữ nguyên màu sắc và kiểu dáng gốc */
+    .container-fluid {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    h3 {
+        text-align: center;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .button_tkb {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        margin: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .button_tkb:hover {
+        background-color: #0056b3;
+    }
+
+    input[type="file"] {
+        display: block;
+        margin: 10px 0;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    #saveToDB {
+        background-color: #28a745;
+        cursor: not-allowed;
+    }
+
+    .data_tkb {
+        margin-top: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 100%;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        margin-top: 15px;
+        width: 100%;
+    }
+
+    .table-tkb {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .table-tkb th, .table-tkb td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        word-break: break-word; /* Ngăn chữ bị khuất */
+    }
+
+    .table-tkb th {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .table-tkb tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    .tkb-row:hover {
+        background-color: #e9ecef;
+        transition: background 0.3s;
+    }
+
+    /* Responsive với nhiều tỉ lệ màn hình */
+    @media (max-width: 1200px) { /* Desktop nhỏ */
+        .table-tkb th, .table-tkb td {
+            padding: 8px;
+            font-size: 0.95rem;
+        }
+        .button_tkb {
+            padding: 7px 10px;
+            font-size: 0.95rem;
+        }
+    }
+
+    @media (max-width: 1024px) { /* Tablet lớn */
+        .table-tkb th, .table-tkb td {
+            padding: 7px;
+            font-size: 0.9rem;
+        }
+        .button_tkb {
+            padding: 6px 9px;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 768px) { /* Tablet nhỏ/Mobile lớn */
+        .container-fluid {
+            padding: 15px;
+        }
+        h3 {
+            font-size: 1.8rem;
+        }
+        .button_tkb {
+            padding: 6px 10px;
+            font-size: 0.9rem;
+            margin: 5px 2px;
+            width: auto; /* Đảm bảo nút không quá rộng */
+        }
+        .table-tkb th, .table-tkb td {
+            padding: 6px;
+            font-size: 0.85rem;
+        }
+        input[type="file"] {
+            max-width: 250px;
+        }
+        .data_tkb {
+            padding: 10px;
+        }
+    }
+
+    @media (max-width: 576px) { /* Mobile trung bình */
+        h3 {
+            font-size: 1.5rem;
+        }
+        .button_tkb {
+            padding: 5px 8px;
+            font-size: 0.8rem;
+            width: 100%; /* Nút trải dài trên mobile */
+            max-width: 120px;
+        }
+        .table-tkb th, .table-tkb td {
+            padding: 4px;
+            font-size: 0.75rem;
+        }
+        input[type="file"] {
+            max-width: 200px;
+        }
+    }
+
+    @media (max-width: 414px) { /* Mobile nhỏ (iPhone X) */
+        h3 {
+            font-size: 1.3rem;
+        }
+        .button_tkb {
+            padding: 4px 6px;
+            font-size: 0.75rem;
+            max-width: 100px;
+        }
+        .table-tkb th, .table-tkb td {
+            padding: 3px;
+            font-size: 0.7rem;
+        }
+        .data_tkb {
+            padding: 8px;
+        }
+    }
+
+    @media (max-width: 360px) { /* Mobile rất nhỏ (Galaxy S5) */
+        h3 {
+            font-size: 1.2rem;
+        }
+        .button_tkb {
+            padding: 4px 5px;
+            font-size: 0.7rem;
+            max-width: 90px;
+        }
+        .table-tkb th, .table-tkb td {
+            padding: 2px;
+            font-size: 0.65rem;
+        }
+        input[type="file"] {
+            max-width: 180px;
+        }
+    }
+
+    @media (max-width: 320px) { /* Mobile siêu nhỏ (iPhone 5) */
+        h3 {
+            font-size: 1.1rem;
+        }
+        .button_tkb {
+            padding: 3px 4px;
+            font-size: 0.65rem;
+            max-width: 80px;
+        }
+        .table-tkb th, .table-tkb td {
+            padding: 2px;
+            font-size: 0.6rem;
+        }
+        .data_tkb {
+            padding: 5px;
+        }
+    }
 </style>
     <div class="container-fluid">
         <h3 class="text-dark mb-4">Lịch phòng</h3>

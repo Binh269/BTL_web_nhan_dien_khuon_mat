@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block main %}
-    <style>
+    {% comment %} <style>
         .export {
             display: flex;
             flex-wrap: nowrap;
@@ -21,10 +21,147 @@
             border: none;
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background-color 0.3s ease;
         }
-        {% comment %} .thietbi.hidden-thietbi{
-            display: none;
-        } {% endcomment %}
         
+    </style> {% endcomment %}
+    <style>
+        /* Giữ nguyên màu sắc và kiểu dáng gốc */
+        .container-fluid {
+            padding: 20px;
+        }
+    
+        h3 {
+            color: #333;
+            font-weight: bold;
+        }
+    
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            max-width: 100%;
+            flex-direction: column;
+        }
+    
+        .col-md-6.col-xl-4 {
+            flex: 1 1 100%;
+            max-width: 100%;
+            min-width: 0; /* Ngăn kéo dài quá mức */
+        }
+        .tb_nut {
+            width: auto !important; /* Ghi đè Bootstrap */
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: flex-end;
+        }
+        .card {
+            width: 100%;
+            box-sizing: border-box; /* Đảm bảo padding không làm tràn */
+        }
+    
+        .chart-area {
+            height: 320px;
+            width: 100%;
+            max-width: 494px;
+        }
+    
+        /* Nhiều tỉ lệ màn hình */
+        @media (min-width: 1200px) { /* Desktop lớn */
+            .col-md-6.col-xl-4 {
+                flex: 1 1 33.33%;
+                max-width: 33.33%;
+            }
+        }
+    
+        @media (max-width: 1024px) { /* Tablet lớn */
+            .col-md-6.col-xl-4 {
+                flex: 1 1 50%;
+                max-width: 50%;
+            }
+            .chart-area {
+                height: 280px;
+            }
+        }
+    
+        @media (max-width: 768px) { /* Tablet nhỏ/Mobile lớn */
+            .col-md-6.col-xl-4 {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+            .card-body {
+                padding: 10px;
+            }
+            .chart-area {
+                height: 250px;
+                max-width: 100%;
+            }
+        }
+    
+        @media (max-width: 576px) { /* Mobile trung bình */
+            h3 {
+                font-size: 1.5rem;
+            }
+            .card-body {
+                padding: 8px;
+            }
+            .text-xs {
+                font-size: 0.8rem;
+            }
+            .chart-area {
+                height: 200px;
+            }
+        }
+    
+        @media (max-width: 414px) { /* Mobile nhỏ (iPhone X, Galaxy S9) */
+            .card-body {
+                padding: 6px;
+            }
+            .text-xs {
+                font-size: 0.7rem;
+            }
+            .h5 {
+                font-size: 1.2rem;
+            }
+            .chart-area {
+                height: 180px;
+            }
+        }
+    
+        @media (max-width: 360px) { /* Mobile rất nhỏ (Galaxy S5) */
+            h3 {
+                font-size: 1.3rem;
+            }
+            .card-body {
+                padding: 5px;
+            }
+            .text-xs {
+                font-size: 0.65rem;
+            }
+            .h5 {
+                font-size: 1rem;
+            }
+            .chart-area {
+                height: 150px;
+            }
+        }
+    
+        @media (max-width: 320px) { /* Mobile siêu nhỏ (iPhone 5) */
+            h3 {
+                font-size: 1.2rem;
+            }
+            .card-body {
+                padding: 4px;
+            }
+            .text-xs {
+                font-size: 0.6rem;
+            }
+            .h5 {
+                font-size: 0.9rem;
+            }
+            .chart-area {
+                height: 130px;
+            }
+        }
     </style>
 
     <div class="export">

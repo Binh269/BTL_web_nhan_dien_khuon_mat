@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'Show',
-    'Show.giaima',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +140,7 @@ STATICFILES_DIRS = [STATIC_DIR]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+LOGIN_URL = "login"  # Tự động chuyển hướng về trang login khi chưa đăng nhập
+SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Lưu session vào database
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Hết phiên khi đóng trình duyệt

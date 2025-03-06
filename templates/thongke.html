@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block main %}
-<style>
+{% comment %} <style>
     h3 {
         font-weight: bold;
         color: #005f73;
@@ -29,8 +29,161 @@
         background-color: #0077b6;
         color: white;
     }
-</style>
+</style> {% endcomment %}
+<style>
+    /* Giữ nguyên màu sắc và kiểu dáng gốc */
+    .container-fluid {
+        padding: 20px;
+        max-width: 100%;
+    }
 
+    h3 {
+        font-weight: bold;
+        color: #005f73;
+        text-align: center;
+    }
+
+    .chart-container {
+        width: 80%;
+        margin: 0 auto;
+        max-width: 1000px; /* Giới hạn chiều rộng tối đa */
+    }
+
+    .table-container {
+        width: 80%;
+        margin: 0 auto 20px auto;
+        max-width: 1000px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        word-break: break-word; /* Ngăn chữ bị khuất */
+    }
+
+    th {
+        background-color: #0077b6;
+        color: white;
+    }
+
+    /* Responsive với nhiều tỉ lệ màn hình */
+    @media (max-width: 1200px) { /* Desktop nhỏ */
+        .chart-container, .table-container {
+            width: 90%;
+        }
+        th, td {
+            padding: 7px;
+            font-size: 0.95rem;
+        }
+        .chart-container canvas {
+            height: 300px !important;
+        }
+    }
+
+    @media (max-width: 1024px) { /* Tablet lớn */
+        .chart-container, .table-container {
+            width: 95%;
+        }
+        th, td {
+            padding: 6px;
+            font-size: 0.9rem;
+        }
+        .chart-container canvas {
+            height: 280px !important;
+        }
+    }
+
+    @media (max-width: 768px) { /* Tablet nhỏ/Mobile lớn */
+        .container-fluid {
+            padding: 15px;
+        }
+        h3 {
+            font-size: 1.8rem;
+        }
+        .chart-container, .table-container {
+            width: 100%;
+        }
+        th, td {
+            padding: 6px;
+            font-size: 0.85rem;
+        }
+        .chart-container canvas {
+            height: 250px !important;
+        }
+    }
+
+    @media (max-width: 576px) { /* Mobile trung bình */
+        h3 {
+            font-size: 1.5rem;
+        }
+        th, td {
+            padding: 4px;
+            font-size: 0.75rem;
+        }
+        .chart-container canvas {
+            height: 200px !important;
+        }
+        .table-container {
+            overflow-x: auto; /* Cuộn ngang nếu bảng quá rộng */
+        }
+    }
+
+    @media (max-width: 414px) { /* Mobile nhỏ (iPhone X) */
+        h3 {
+            font-size: 1.3rem;
+        }
+        th, td {
+            padding: 3px;
+            font-size: 0.7rem;
+        }
+        .chart-container canvas {
+            height: 180px !important;
+        }
+    }
+
+    @media (max-width: 360px) { /* Mobile rất nhỏ (Galaxy S5) */
+        h3 {
+            font-size: 1.2rem;
+        }
+        th, td {
+            padding: 2px;
+            font-size: 0.65rem;
+        }
+        .chart-container canvas {
+            height: 160px !important;
+        }
+    }
+
+    @media (max-width: 320px) { /* Mobile siêu nhỏ (iPhone 5) */
+        h3 {
+            font-size: 1.1rem;
+        }
+        th, td {
+            padding: 2px;
+            font-size: 0.6rem;
+        }
+        .chart-container canvas {
+            height: 140px !important;
+        }
+    }
+
+    /* Tỉ lệ màn hình dài (như 9:16) */
+    @media (max-height: 800px) and (max-width: 414px) {
+        .chart-container canvas {
+            height: 30vh !important; /* Thu nhỏ biểu đồ cho màn dài */
+        }
+        .table-container {
+            max-height: 25vh; /* Giới hạn chiều cao bảng */
+            overflow-y: auto; /* Cuộn dọc nếu cần */
+        }
+    }
+</style>
 <div class="container-fluid text-center">
     <h3 class="text-dark mb-4">Thống kê điểm danh</h3>
 

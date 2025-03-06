@@ -22,7 +22,7 @@ const char* ssid = "IoT";
 const char* password = "234567Cn";
 
 // Cấu hình MQTT
-const char* mqttServer = "192.168.0.111";
+const char* mqttServer = "nekotrang.duckdns.org";
 const int mqttPort = 1883;               // Cổng MQTT
 const char* mqttTopic = "MQTT_DC_DongCo"; // Topic để gửi dữ liệu
 
